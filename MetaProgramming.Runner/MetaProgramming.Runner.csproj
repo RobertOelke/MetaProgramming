@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="structuremap" Version="4.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MetaProgramming.Benchmark\MetaProgramming.Benchmark.csproj" />
+    <ProjectReference Include="..\MetaProgramming.Controller\MetaProgramming.Controller.csproj" />
+    <ProjectReference Include="..\MetaProgramming.IoC\MetaProgramming.IoC.csproj" />
+    <ProjectReference Include="..\MetaProgramming.ORM.EFCore\MetaProgramming.ORM.EFCore.csproj" />
+    <ProjectReference Include="..\MetaProgramming.ORM.Manually\MetaProgramming.ORM.Manually.csproj" />
+  </ItemGroup>
+
+</Project>
