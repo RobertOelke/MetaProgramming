@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace MetaProgramming.Controller
 {
@@ -23,7 +24,8 @@ namespace MetaProgramming.Controller
         private readonly HttpListener _listener = new HttpListener();
         private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
-        private readonly Dictionary<string, Dictionary<(string, HttpType), (Type, MethodInfo)>> _roots = new Dictionary<string, Dictionary<(string, HttpType), (Type, MethodInfo)>>();
+        private readonly Dictionary<string, Dictionary<(string, HttpType), (Type type, MethodInfo method)>> _roots =
+            new Dictionary<string, Dictionary<(string, HttpType), (Type type, MethodInfo method)>>();
 
         public RootController()
         {
@@ -77,6 +79,8 @@ namespace MetaProgramming.Controller
             ((IDisposable)_listener).Dispose();
         }
 
+        private object DeserializeObject<T>(string json) => JsonConvert.DeserializeObject<T>(json);
+
         private async Task HandleRequestAsync()
         {
             var context = await Task.Factory.StartNew(() => _listener.GetContext(), _tokenSource.Token);
@@ -121,17 +125,28 @@ namespace MetaProgramming.Controller
             {
                 if (subRoots.TryGetValue((segments[1], type), out var values))
                 {
-                    var contoller = Activator.CreateInstance(values.Item1);
+                    var contoller = Activator.CreateInstance(values.type);
+                    var methodInfo = values.method;
 
                     switch (type)
                     {
                         case HttpType.Get:
-                            var result = values.Item2.Invoke(contoller, new object[0]).ToString();
+                            var result = methodInfo.Invoke(contoller, new object[0]).ToString();
                             writeRequest(result);
                             break;
+
                         case HttpType.Post:
                             var requestData = readRequestData();
-                            Console.WriteLine(requestData);
+                            var argsType = methodInfo.GetParameters().First().ParameterType;
+
+                            var deserializeObject =
+                                typeof(RootController)
+                                .GetMethod("DeserializeObject", BindingFlags.Instance | BindingFlags.NonPublic)
+                                .MakeGenericMethod(argsType);
+
+                            var args = deserializeObject.Invoke(this, new object [] { requestData });
+                            
+                            methodInfo.Invoke(contoller, new [] { args });
                             writeRequest(string.Empty);
                             break;
                     }
